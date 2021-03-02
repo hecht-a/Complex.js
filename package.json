@@ -1,0 +1,43 @@
+{
+  "name": "complex-ts",
+  "version": "3.0.0",
+  "description": "A complex number library",
+  "main": "build/index.js",
+  "author": "Robert Eisele <robert@xarg.org> (http://www.xarg.org/)",
+  "maintainers": [
+    "HECHT Axel"
+  ],
+  "license": "MIT",
+  "scripts": {
+    "build": "tsc -p tsconfig.prod.json",
+    "start": "node -r source-map-support/register .",
+    "lint": "eslint \"src/**\"",
+    "lint:fix": "eslint --fix \"src/**\"",
+    "dev": "yarn build && yarn start",
+    "dev:lint": "yarn lint:fix && yarn build && yarn start",
+    "test": "jest --testTimeout=10000 --detectOpenHandles --force-exit"
+  },
+  "devDependencies": {
+    "@types/node": "^14.14.10",
+    "@typescript-eslint/eslint-plugin": "^4.9.0",
+    "@typescript-eslint/parser": "^4.9.0",
+    "eslint": "^7.15.0",
+    "eslint-config-airbnb-base": "^14.2.1",
+    "eslint-config-airbnb-typescript": "^12.0.0",
+    "eslint-config-prettier": "^7.2.0",
+    "eslint-plugin-import": "^2.22.1",
+    "eslint-plugin-json": "^2.1.2",
+    "eslint-plugin-prettier": "^3.3.1",
+    "eslint-plugin-simple-import-sort": "^7.0.0",
+    "jest": "^26.6.3",
+    "prettier": "^2.2.1",
+    "source-map-support": "^0.5.19",
+    "ts-jest": "^26.5.1",
+    "typescript": "^4.1.3"
+  },
+  "jest": {
+    "preset": "ts-jest",
+    "testEnvironment": "node",
+    "testRegex": "test/.+\\.test\\.ts"
+  }
+}

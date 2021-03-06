@@ -21,7 +21,6 @@ export function parser(a: ParserOptions | ParserParams, b?: ParserOptions | Pars
 			case "object":
 				if (Array.isArray(a)) {
 					if (a.length === 2) {
-						// Quick array check
 						// eslint-disable-next-line prefer-destructuring
 						z.re = a[0];
 						// eslint-disable-next-line prefer-destructuring
@@ -29,23 +28,24 @@ export function parser(a: ParserOptions | ParserParams, b?: ParserOptions | Pars
 					} else {
 						throw new ParserExit("Invalid Parameter");
 					}
-				} else if (a.im && a.re) {
+				} else if (a.im != null && a.re != null) {
 					z.re = a.re;
 					z.im = a.im;
-				} else if (a.abs && a.arg) {
+				}
+
+				if (!(a instanceof Complex) && !Array.isArray(a) && a.abs != null && a.arg != null) {
 					if (!Number.isFinite(a.abs) && Number.isFinite(a.arg)) {
 						return new Complex(Infinity, Infinity);
 					}
 					z.re = a.abs * Math.cos(a.arg);
 					z.im = a.abs * Math.sin(a.arg);
-				} else if (a.r && a.phi) {
-					if (!Number.isFinite(a.r) && Number.isFinite(a.phi)) {
-						return new Complex(Infinity, Infinity);
+					if (a.r && a.phi) {
+						if (!Number.isFinite(a.r) && Number.isFinite(a.phi)) {
+							return new Complex(Infinity, Infinity);
+						}
+						z.re = a.r * Math.cos(a.phi);
+						z.im = a.r * Math.sin(a.phi);
 					}
-					z.re = a.r * Math.cos(a.phi);
-					z.im = a.r * Math.sin(a.phi);
-				} else {
-					throw new ParserExit("Invalid Parameter");
 				}
 				break;
 
@@ -73,12 +73,12 @@ export function parser(a: ParserOptions | ParserParams, b?: ParserOptions | Pars
 						plus++;
 					} else if (c === "-") {
 						minus++;
-					} else if (c === "i" || c === "I") {
+					} else if (c.toLowerCase() === "i") {
 						if (plus + minus === 0) {
 							throw new ParserExit("Invalid Parameter");
 						}
 
-						if (tokens[i + 1] !== " " && !Number.isNaN(tokens[i + 1])) {
+						if (tokens[i + 1] !== " " && tokens[i + 1] && tokens[i + 1].match(/\d+/)) {
 							z.im += parseFloat((minus % 2 ? "-" : "") + tokens[i + 1]);
 							i++;
 						} else {
@@ -102,10 +102,10 @@ export function parser(a: ParserOptions | ParserParams, b?: ParserOptions | Pars
 					}
 				}
 
-				// Still something on the stack
 				if (plus + minus > 0) {
 					throw new ParserExit("Invalid Parameter");
 				}
+
 				break;
 
 			case "number":
@@ -117,16 +117,17 @@ export function parser(a: ParserOptions | ParserParams, b?: ParserOptions | Pars
 				throw new ParserExit("Invalid Parameter");
 		}
 	}
-
 	if (Number.isNaN(z.re) || Number.isNaN(z.im)) {
-		// If a calculation is NaN, we treat it as NaN and don't throw
-		// parser_exit();
+		throw new ParserExit("Invalid Parameter");
 	}
-	if (z.re === undefined && [Infinity, NaN].includes(<number>a)) {
+	if (z.re === undefined && [-Infinity, Infinity, NaN].includes(<number>a)) {
 		z.re = <number>a;
 	}
-	if (z.im === undefined && [Infinity, NaN].includes(<number>b)) {
+
+	if (z.im === undefined && [-Infinity, Infinity, NaN].includes(<number>b)) {
+		// console.log("a", z.im, b);
 		z.im = <number>b;
+		// console.log("b", z.im, b);
 	}
 	return z;
 }

@@ -1,3 +1,5 @@
+import { Complex } from "../Complex";
+
 export interface ParserOptions {
 	re?: number;
 	im?: number;
@@ -7,7 +9,7 @@ export interface ParserOptions {
 	phi?: number;
 }
 
-export type ParserParams = string | number | number[];
+export type ParserParams = string | number | number[] | Complex;
 
 export interface IComplex {
 	re: number;

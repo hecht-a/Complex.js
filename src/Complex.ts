@@ -1,4 +1,4 @@
-import { IComplex } from "./types";
+import { IComplex, ParserOptions, ParserParams } from "./types";
 import { EPSILON } from "./utils/constants";
 import { cosh } from "./utils/cosh";
 import { cosm1 } from "./utils/cosm1";
@@ -12,7 +12,23 @@ export class Complex {
 
 	im: number;
 
-	constructor(a: number, b?: number) {
+	public static ZERO = new Complex(0, 0);
+
+	public static ONE = new Complex(1, 0);
+
+	public static I = new Complex(0, 1);
+
+	public static PI = new Complex(Math.PI, 0);
+
+	public static E = new Complex(Math.E, 0);
+
+	public static INFINITY = new Complex(Infinity, Infinity);
+
+	public static NAN = new Complex(NaN, NaN);
+
+	public static EPSILON = 1e-16;
+
+	constructor(a: ParserOptions | ParserParams, b?: ParserOptions | ParserParams) {
 		const z = <IComplex>parser(a, b);
 		this.re = z.re;
 		this.im = z.im;
@@ -27,19 +43,27 @@ export class Complex {
 	}
 
 	public isNaN(): boolean {
-		return !(String(this.re).match(/\d+/) && String(this.im).match(/\d+/));
+		// eslint-disable-next-line no-restricted-globals
+		return !(String(this.re).match(/\d+|Infinity/) && String(this.im).match(/\d+|Infinity/));
 	}
 
 	public isFinite(): boolean {
-		return Number.isFinite(this.re) && Number.isFinite(this.im);
+		// eslint-disable-next-line no-restricted-globals
+		return isFinite(this.re) && isFinite(this.im);
 	}
 
 	public isInfinite(): boolean {
 		return !(this.isNaN() || this.isFinite());
 	}
 
-	public add(a: number, b: number): Complex {
-		const z = new Complex(a, b);
+	public add(a: ParserOptions | ParserParams, b?: number): Complex {
+		let aa = a;
+		let bb = b;
+		if (a instanceof Complex) {
+			aa = a.re;
+			bb = a.im;
+		}
+		const z = new Complex(aa, bb);
 		if (this.isInfinite() && z.isInfinite) {
 			return new Complex(NaN, NaN);
 		}
@@ -51,8 +75,14 @@ export class Complex {
 		return new Complex(this.re + z.re, this.im + z.im);
 	}
 
-	public sub(a: number, b: number): Complex {
-		const z = new Complex(a, b);
+	public sub(a: ParserOptions | ParserParams, b?: number): Complex {
+		let aa = a;
+		let bb = b;
+		if (a instanceof Complex) {
+			aa = a.re;
+			bb = a.im;
+		}
+		const z = new Complex(aa, bb);
 		if (this.isInfinite() && z.isInfinite) {
 			return new Complex(NaN, NaN);
 		}
@@ -68,11 +98,19 @@ export class Complex {
 		return this.re === 0 && this.im === 0;
 	}
 
-	public mul(a: number, b: number): Complex {
-		const z = new Complex(a, b);
-		if ((this.isInfinite() && z.isZero) || (this.isZero() && z.isInfinite())) {
+	public mul(a: ParserOptions | ParserParams, b?: number): Complex {
+		let aa = a;
+		let bb = b;
+		if (a instanceof Complex) {
+			aa = a.re;
+			bb = a.im;
+		}
+		const z = new Complex(aa, bb);
+
+		if ((this.isInfinite() && z.isZero()) || (this.isZero() && z.isInfinite())) {
 			return new Complex(NaN, NaN);
 		}
+
 		if (this.isInfinite() || z.isInfinite()) {
 			return new Complex(Infinity, Infinity);
 		}
@@ -84,13 +122,19 @@ export class Complex {
 		return new Complex(this.re * z.re - this.im * z.im, this.re * z.im + this.im * z.re);
 	}
 
-	public div(a: number, b: number): Complex {
-		const z = new Complex(a, b);
-		if ((this.isZero() && z.isZero) || (this.isInfinite() && z.isInfinite())) {
+	public div(a: ParserOptions | ParserParams, b?: number): Complex {
+		let aa = a;
+		let bb = b;
+		if (a instanceof Complex) {
+			aa = a.re;
+			bb = a.im;
+		}
+		const z = new Complex(aa, bb);
+		if ((this.isZero() && z.isZero()) || (this.isInfinite() && z.isInfinite())) {
 			return new Complex(NaN, NaN);
 		}
 
-		if (this.isInfinite() || z.isInfinite()) {
+		if (this.isInfinite() || z.isZero()) {
 			return new Complex(Infinity, Infinity);
 		}
 
@@ -100,7 +144,7 @@ export class Complex {
 		let t;
 		let x;
 
-		if (z.re === 0) {
+		if (z.im === 0) {
 			return new Complex(this.re / z.re, this.im / z.re);
 		}
 		if (Math.abs(z.re) < Math.abs(z.im)) {
@@ -113,8 +157,14 @@ export class Complex {
 		return new Complex((this.re + this.im * x) / t, (this.im - this.re * x) / t);
 	}
 
-	public pow(a: number, b: number): Complex {
-		const z = new Complex(a, b);
+	public pow(a: ParserOptions | ParserParams, b?: number): Complex {
+		let aa = a;
+		let bb = b;
+		if (a instanceof Complex) {
+			aa = a.re;
+			bb = a.im;
+		}
+		const z = new Complex(aa, bb);
 		if (z.isZero()) {
 			return new Complex(1, 0);
 		}
@@ -144,9 +194,9 @@ export class Complex {
 
 		const arg = Math.atan2(this.im, this.re);
 		const loh = logHypot(this.re, this.im);
-		const aa = Math.exp(z.re * loh - z.im * arg);
-		const bb = z.im * loh + z.re * arg;
-		return new Complex(aa * Math.cos(bb), aa * Math.sin(bb));
+		const exp1 = Math.exp(z.re * loh - z.im * arg);
+		const sum = z.im * loh + z.re * arg;
+		return new Complex(exp1 * Math.cos(sum), exp1 * Math.sin(sum));
 	}
 
 	public sqrt(): Complex {
@@ -186,9 +236,12 @@ export class Complex {
 	}
 
 	public log(): Complex {
-		if (this.re === 0 && this.im === 0) {
-			return new Complex(Math.log(this.re), 0);
-		}
+		// if (this.re > 0 && this.im === 0) {
+		// 	return new Complex(Math.log(this.re), 0);
+		// }
+		// console.log(logHypot(this.re, this.im));
+		// console.log(Math.atan2(this.im, this.re));
+		// console.log(new Complex(logHypot(this.re, this.im), Math.atan2(this.im, this.re)));
 		return new Complex(logHypot(this.re, this.im), Math.atan2(this.im, this.re));
 	}
 
@@ -208,7 +261,7 @@ export class Complex {
 		const a = 2 * this.re;
 		const b = 2 * this.im;
 		const d = Math.cos(a) + cosh(b);
-		return new Complex(Math.sign(a) / d, sinh(b) / d);
+		return new Complex(Math.sin(a) / d, sinh(b) / d);
 	}
 
 	public cot(): Complex {
@@ -298,17 +351,18 @@ export class Complex {
 	}
 
 	public tanh(): Complex {
-		return new Complex(
-			sinh(this.re) / (cosh(this.re) + Math.cos(this.im)),
-			Math.sin(this.im) / (cosh(this.re) + Math.cos(this.im)),
-		);
+		const a = 2 * this.re;
+		const b = 2 * this.im;
+		const d = cosh(a) + Math.cos(b);
+
+		return new Complex(sinh(a) / d, Math.sin(b) / d);
 	}
 
 	public coth(): Complex {
-		return new Complex(
-			sinh(this.re) / (cosh(this.re) - Math.cos(this.im)),
-			-Math.sin(this.im) / (cosh(this.re) - Math.cos(this.im)),
-		);
+		const a = 2 * this.re;
+		const b = 2 * this.im;
+		const d = cosh(a) - Math.cos(b);
+		return new Complex(sinh(a) / d, -Math.sin(b) / d);
 	}
 
 	public csch(): Complex {
@@ -439,9 +493,14 @@ export class Complex {
 		return new Complex(Math.round(this.re * pl) / pl, Math.round(this.im * pl) / pl);
 	}
 
-	public equals(a: number, b: number): boolean {
-		const z = new Complex(a, b);
-
+	public equals(a: ParserOptions | ParserParams, b?: number): boolean {
+		let aa = a;
+		let bb = b;
+		if (a instanceof Complex) {
+			aa = a.re;
+			bb = a.im;
+		}
+		const z = new Complex(aa, bb);
 		return Math.abs(z.re - this.re) <= EPSILON && Math.abs(z.im - this.im) <= EPSILON;
 	}
 
@@ -451,13 +510,13 @@ export class Complex {
 
 	public toString(): string {
 		let ret = "";
+
 		if (this.isNaN()) {
 			return "NaN";
 		}
 		if (this.isInfinite()) {
 			return "Infinity";
 		}
-		// If is real number
 		if (this.im === 0) {
 			return ret + this.re;
 		}
@@ -476,7 +535,6 @@ export class Complex {
 			ret += "-";
 		}
 		if (this.im !== 1) {
-			// b is the absolute imaginary part
 			ret += this.im;
 		}
 		return `${ret}i`;
